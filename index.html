@@ -5089,7 +5089,24 @@ function bindCard(v){
  document.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>{let [t,k]=b.dataset.say.split(':');speak(PRONOUNS[Number(k)].replace(' / ea','').replace(' / ele','')+' '+v[t][Number(k)],null)});
  document.querySelectorAll('[data-translate]').forEach(b=>b.onclick=()=>{const el=$('ru'+b.dataset.translate);const show=el.classList.contains('hide');el.classList.toggle('hide',!show);b.textContent=show?'Скрыть':'Перевод';b.setAttribute('aria-expanded',String(show))});
  if($('toggleAllTranslations'))$('toggleAllTranslations').onclick=()=>{const hiding=[...document.querySelectorAll('.ruSentence')].every(el=>!el.classList.contains('hide'));document.querySelectorAll('.ruSentence').forEach(el=>el.classList.toggle('hide',hiding));document.querySelectorAll('[data-translate]').forEach(el=>{el.textContent=hiding?'Перевод':'Скрыть';el.setAttribute('aria-expanded',String(!hiding))});$('toggleAllTranslations').textContent=hiding?'Показать все переводы':'Скрыть все переводы'};
- $('hard').onclick=()=>{markHard(v);const count=filtered().length;const moved=state.cursor<count-1;if(moved){advance(1)}else{render()}setDeviceStatus('✓ '+v.infinitive+' — повторение назначено на завтра. '+(moved?'Открыта следующая карточка.':'Это последняя карточка в списке.'))};
+ $('hard').onclick=()=>{
+  const verbName=v.infinitive;
+  markHard(v);
+  const after=filtered();
+  if(after.length){
+    const idx=after.findIndex(item=>item.id===v.id);
+    state.cursor=idx<0?Math.min(state.cursor,after.length-1):(idx+1)%after.length;
+  } else {state.cursor=0;}
+  state.question=null;state.feedback='';
+  render();
+  const message='✓ '+verbName+' — повторить завтра. '+(after.length>1?'Следующий глагол открыт.':'');
+  setDeviceStatus(message);
+  let toast=document.getElementById('reviewToast');
+  if(!toast){toast=document.createElement('div');toast.id='reviewToast';toast.setAttribute('role','status');toast.style.cssText='position:fixed;z-index:99999;top:14px;left:12px;right:12px;max-width:480px;margin:auto;background:#183b32;color:white;padding:14px 18px;border-radius:12px;box-shadow:0 6px 24px #0004;font-size:16px;text-align:center;pointer-events:none';document.body.appendChild(toast)}
+  toast.textContent=message;toast.style.display='block';
+  clearTimeout(window.__reviewToastTimeout);
+  window.__reviewToastTimeout=setTimeout(()=>{toast.style.display='none'},2500);
+};
  if(state.mode==='study'){$('studyMicPermit').onclick=()=>requestMicPermission('study');$('studyListen').onclick=()=>listen(v,'study');$('studyRecord').onclick=()=>recordVoice(v,'study');$('micHelpStudy').onclick=()=>toggleMicHelp('study')}
  if(state.mode==='test'){$('testMicPermit').onclick=()=>requestMicPermission('test');$('listen').onclick=()=>listen(v,'test');$('recordBtn').onclick=()=>listen(v,'test');$('micHelpTest').onclick=()=>toggleMicHelp('test');$('checkText').onclick=()=>{checkAnswer(v,$('answer').value)};$('answer').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();checkAnswer(v,$('answer').value)}};$('reveal').onclick=()=>{state.feedback='reveal';render()};$('changeQuestion').onclick=()=>{nextQuestion(v);render()}}
 }
